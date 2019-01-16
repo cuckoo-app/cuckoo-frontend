@@ -1,56 +1,190 @@
 import React from "react";
 import { BrowserRouter as Router, Route, Link } from "react-router-dom";
-import Home from './Home'
+import JobList from './JobList'
+import JobDetails from './JobDetails'
+import Autosuggest from 'react-autosuggest'
+import demoData from './data';
+import './App.css'
+
+const MyJobList = (props) => {
+  return (
+    <JobList
+      data={demoData}
+      {...props}
+    />
+  )
+}
+
 
 const App = () => (
   <Router>
-    <div style={{display: 'flex', flexDirection: 'column', justifyContent:'center',
-    alignItems:'center',}}>
-      <Header style={{}}/>
+    <div style={{display: 'flex',
+      flexDirection: 'column',
+      justifyContent: 'center',
+    }}>
+      <Header style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-evenly',
+        paddingTop: 8,
+        paddingBottom: 0,
+      }}/>
 
-      <Route exact path="/" component={Home} />
-      <Route path="/about" component={About} />
-      <Route path="/topics" component={Topics} />
+      <Route exact path="/" component={MyJobList} />
+      <Route path="/details" component={JobDetails} />
+      <Route path="/account" component={Account} />
     </div>
   </Router>
 );
 
-// const Home = () => <h2>Home</h2>;
-const About = () => <h2>About</h2>;
-const Topic = ({ match }) => <h3>Requested Param: {match.params.id}</h3>;
-const Topics = ({ match }) => (
-  <div>
-    <h2>Topics</h2>
+const Account = ({ match }) => (
+    <div>
+      <h3>Settings:</h3>
+      <p>Here are settings!</p>
+    </div>
+);
 
-    <ul>
-      <li>
-        <Link to={`${match.url}/components`}>Components</Link>
-      </li>
-      <li>
-        <Link to={`${match.url}/props-v-state`}>Props v. State</Link>
-      </li>
-    </ul>
+const styles = {
+  header: {
+    paddingLeft: 20,
+    paddingRight: 20,
+    flex: 1,
+    textAlign: 'center',
+  },
+  search: {
+    paddingLeft: 20,
+    paddingRight: 20,
+    width: 620,
+  }
+}
 
-    <Route path={`${match.path}/:id`} component={Topic} />
-    <Route
-      exact
-      path={match.path}
-      render={() => <h3>Please select a topic.</h3>}
-    />
+// Teach Autosuggest how to calculate suggestions for any given input value.
+const getSuggestions = value => {
+  const inputValue = value.trim().toLowerCase();
+  const inputLength = inputValue.length;
+
+  if (inputLength === 0) {
+    return [];
+  }
+  else {
+    var matchingJobs = demoData.filter(job =>
+      job.command.toLowerCase().includes(inputValue)
+    );
+    var seen = {};
+    return matchingJobs.filter(function(job) {
+        var command = job.command;
+        return seen.hasOwnProperty(command) ? false : (seen[command] = true);
+    })
+  }
+};
+
+// When suggestion is clicked, Autosuggest needs to populate the input
+// based on the clicked suggestion. Teach Autosuggest how to calculate the
+// input value for every given suggestion.
+const getSuggestionValue = suggestion => suggestion.command;
+
+// Use your imagination to render suggestions.
+const renderSuggestion = suggestion => (
+  <div style={{textAlign: 'left'}}>
+    {suggestion.command}
   </div>
 );
-const Header = () => (
-  <ul>
-    <li>
-      <Link to="/">Home</Link>
-    </li>
-    <li>
-      <Link to="/about">About</Link>
-    </li>
-    <li>
-      <Link to="/topics">Topics</Link>
-    </li>
-  </ul>
+
+class SearchBar extends React.Component {
+  constructor(props) {
+    super(props);
+
+    this.history = props.history
+    this.state = {
+      value: '',
+      suggestions: []
+    };
+  }
+
+  onChange = (event, { newValue, method }) => {
+
+    if (method === 'enter') {
+      console.log(newValue);
+      this.history.push(`/?key=${newValue}`)
+      this.setState({
+        value: newValue
+      });
+    }
+    else {
+      this.setState({
+        value: newValue
+      });
+    }
+  };
+
+  onSuggestionsFetchRequested = ({ value }) => {
+    this.setState({
+      suggestions: getSuggestions(value)
+    });
+  };
+
+  onSuggestionSelected = ( event, { suggestion }) => {
+    this.setState({
+      value: suggestion.command
+    });
+    console.log(suggestion.command);
+    this.history.push(`/?key=${suggestion.command}`)
+  }
+
+  onSuggestionsClearRequested = () => {
+    this.setState({
+      suggestions: []
+    });
+  };
+
+  onKeyDown = (event) => {
+    // Enter
+    if (event.keyCode === 13) {
+      console.log(this.state.value);
+      this.history.push(`/?key=${this.state.value}`)
+    }
+  }
+
+  render() {
+    const { value, suggestions } = this.state;
+
+    const inputProps = {
+      placeholder: 'Search',
+      value,
+      onChange: this.onChange,
+      onKeyDown: this.onKeyDown
+    };
+
+    return (
+      <Autosuggest
+        suggestions={suggestions}
+        onSuggestionsFetchRequested={this.onSuggestionsFetchRequested}
+        onSuggestionsClearRequested={this.onSuggestionsClearRequested}
+        onSuggestionSelected={this.onSuggestionSelected}
+        getSuggestionValue={getSuggestionValue}
+        renderSuggestion={renderSuggestion}
+        inputProps={inputProps}
+      />
+    );
+  }
+}
+
+const Header = (props) => (
+  <div style={props.style}>
+      <Link style={{...styles.header,
+        textDecoration: 'none',
+        color: 'crimson',
+        fontSize: '32px',
+      }} to="/"><h3>CLI Notify</h3></Link>
+      <div style={styles.search}>
+        <Route render={({ history }) => (
+          <SearchBar history={history}/>
+        )} />
+      </div>
+      <Link style={{...styles.header,
+        color: 'crimson',
+      }} to="/account"><h3>Account</h3></Link>
+  </div>
 );
 
 export default App;
