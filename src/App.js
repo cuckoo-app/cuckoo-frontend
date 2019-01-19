@@ -152,7 +152,7 @@ class SearchBar extends React.Component {
       placeholder: 'Search',
       value,
       onChange: this.onChange,
-      onKeyDown: this.onKeyDown
+      onKeyDown: this.onKeyDown,
     };
 
     return (
@@ -175,7 +175,7 @@ const Header = (props) => (
         textDecoration: 'none',
         color: 'crimson',
         fontSize: '32px',
-      }} to="/"><h3>CLI Notify</h3></Link>
+      }} to="/"><h3>Cuckoo</h3></Link>
       <div style={styles.search}>
         <Route render={({ history }) => (
           <SearchBar history={history}/>
